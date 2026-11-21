@@ -4,6 +4,7 @@ library(tidyverse)
 library(fpp3)
 library(BVAR)
 
+#2.1a
 liquor_raw <- read_csv(
   "data/MRTSSM4453USN.csv",
   na = ".",
@@ -20,6 +21,7 @@ liquor <- liquor_raw |>
 
 has_gaps(liquor)
 
+#2.1b
 autoplot(liquor, sales) +
   labs(title = "Liquor Sales Over Time",
        x = "Year",
@@ -30,6 +32,7 @@ gg_season(liquor, log(sales)) +
        x = "Month",
        y = "Log Sales")
 
+#2.2a
 liquor_fit <- liquor |>
   model(arima = ARIMA(log(sales)),
         ets   = ETS(log(sales)))
@@ -37,6 +40,7 @@ liquor_fit <- liquor |>
 liquor_fit |> select(arima) |> report()
 liquor_fit |> select(ets) |> report()
 
+#2.2b
 liquor_fit |> select(arima) |> gg_tsresiduals()
 
 liquor_fit |>
@@ -44,6 +48,7 @@ liquor_fit |>
   augment() |>
   features(.innov, ljung_box, lag = 24, dof = 6)
 
+#2.3a
 liquor_cv <- liquor |>
   stretch_tsibble(.init = 120, .step = 1) |>
   filter(.id < max(.id))
@@ -55,6 +60,7 @@ liquor_cv_fit <- liquor_cv |>
 
 saveRDS(liquor_cv_fit, "results/liquor_cv_fit.rds")
 
+#2.3b
 liquor_cv_fc <- liquor_cv_fit |>
   forecast(h = 1)
 
@@ -62,6 +68,7 @@ liquor_cv_fc |>
   accuracy(liquor, measures = list(RMSE = RMSE, MAE = MAE))|>
   knitr::kable(digits = 2)
 
+#2.4
 liquor_errs <- liquor_cv_fc |>
   as_tibble() |>
   left_join(as_tibble(liquor) |> select(Month, actual = sales),
@@ -73,21 +80,21 @@ liquor_errs <- liquor_cv_fc |>
 forecast::dm.test(liquor_errs$arima, liquor_errs$ets, h = 1, power = 2)
 forecast::dm.test(liquor_errs$arima, liquor_errs$snaive, h = 1,power = 2)
 
-#part 3
+#part 3a
 liquor_combo_fc <- liquor_cv_fit |>
   mutate(combo = (arima + ets) / 2) |>
   forecast(h = 1)
 
 liquor_combo_fc |>
-  accuracy(liquor, measures = list(RMSE = RMSE, MAE = MAE))
-
+  accuracy(liquor, measures = list(RMSE = RMSE, MAE = MAE))|> knitr::kable(digits = 2)
+#part 3b
 cor(liquor_errs$arima, liquor_errs$ets)
 
-#part 4
+#part 4.1a
 qd_raw <- read_csv("data/fredqd_2026-09.csv", show_col_types = FALSE) |>
   slice(-(1:2))
 
-
+#4.1b
 growth <- function(x) 100 * difference(log(x))
 
 qd <- qd_raw |>
@@ -108,6 +115,7 @@ y <- qd |> select(-date) |> as.matrix()
 nrow(y)
 head(y)
 
+#4.1c
 N <- nrow(y)
 origins <- 120:(N - 1)
 actual <- y[121:N, ]
