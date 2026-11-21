@@ -72,3 +72,13 @@ liquor_errs <- liquor_cv_fc |>
 
 forecast::dm.test(liquor_errs$arima, liquor_errs$ets, h = 1, power = 2)
 forecast::dm.test(liquor_errs$arima, liquor_errs$snaive, h = 1,power = 2)
+
+#part 3
+liquor_combo_fc <- liquor_cv_fit |>
+  mutate(combo = (arima + ets) / 2) |>
+  forecast(h = 1)
+
+liquor_combo_fc |>
+  accuracy(liquor, measures = list(RMSE = RMSE, MAE = MAE))
+
+cor(liquor_errs$arima, liquor_errs$ets)
